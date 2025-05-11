@@ -1,0 +1,32 @@
+
+.table-striped tbody {
+    background-color: #375A7F;
+    color:white;
+}
+/* .navbar {
+    background-color: #4CAF50 !important;
+} */
+.field-indented_serial a {
+    color: rgb(255, 123, 0) !important;
+}
+
+.field-id a {
+    color: rgb(255, 123, 0) !important;
+}
+
+.field-indented_title a div {
+    color: rgb(255, 123, 0) !important;
+}
+
+.field-get_ms_display a span {
+    color: rgb(255, 123, 0) !important;
+}
+
+.field-username a {
+    color: rgb(255, 123, 0) !important;
+}
+
+.select2-container--admin-autocomplete {
+    border: 0.5px solid #ccc;
+    border-radius: 4px;
+}

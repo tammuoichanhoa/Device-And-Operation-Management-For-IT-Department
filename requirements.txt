@@ -1,0 +1,9 @@
+Django==5.1
+django-chartjs==2.3.0
+django-jazzmin==3.0.1
+django-import-export==4.3.7
+django-smart-selects==1.7.2
+django-admin-rangefilter==0.13.2
+weasyprint==65.1
+django-mptt-admin==2.8.0
+psycopg2-binary==2.9.10
