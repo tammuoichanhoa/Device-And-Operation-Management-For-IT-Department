@@ -46,8 +46,9 @@ CREATE DATABASE your_db_name;
 ```
 
 Replace `your_db_name` with your desired database name.
+Make sure you config exact db name in settings.py
 
-### 4. Initialize Data
+### 4. Initialize Seed Data (Optional)
 
 Run the `setup` script to initialize the data and any necessary database migrations:
 
@@ -55,9 +56,15 @@ Run the `setup` script to initialize the data and any necessary database migrati
 ./setup
 ```
 
-This script will set up the initial data required for the project to run properly.
+This script will set up the initial seed data required for the project to run properly.
 
 ### 5. Access the Admin Panel
+
+Start server if it's not running: 
+
+```
+python3 manage.py runserver 0.0.0.0:8000
+```
 
 Once everything is set up, you can access the Django Admin panel by navigating to the following URL in your browser:
 
