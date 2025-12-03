@@ -25,7 +25,16 @@ SECRET_KEY = 'django-insecure-ifu^h&d+1g)cnvk!@j0sm$&n%x=@ru$w89u90*hzs^v22!13u9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS_ENV.split(",") if h] or ["localhost", "127.0.0.1"]
+
+# CSRF trusted origins for reverse proxy / custom ports (override with CSRF_TRUSTED_ORIGINS env)
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+DEFAULT_CSRF_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
+CSRF_TRUSTED_ORIGINS = [o for o in CSRF_TRUSTED_ORIGINS_ENV.split(",") if o] or DEFAULT_CSRF_ORIGINS
 
 
 # Application definition
@@ -373,4 +382,3 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
