@@ -55,12 +55,12 @@ JAZZMIN_SETTINGS = {
     "site_title": "QLTBKT",
     "site_header": "Hệ thống quản lý trang bị kỹ thuật",
     "site_brand": "QLTBKT",
-    "site_icon": "images/logo.png",
+    # "site_icon": "images/logo.png",
     # Add your own branding here
-    "site_logo": "images/logo.png",
+    # "site_logo": "images/logo.png",
     "welcome_sign": "Hệ thống quản lý trang bị kỹ thuật",
     # Copyright on the footer
-    "copyright": "D",
+    "copyright": "anhttb",
     "user_avatar": None,
     ############
     # Top Menu #
@@ -287,22 +287,22 @@ WSGI_APPLICATION = 'qlkt.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'qlkt',
-        'USER': 'red',
-        'PASSWORD': 'red',
-        'HOST': 'localhost',
-        'PORT': '5432'
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'qlkt',
+#         'USER': 'red',
+#         'PASSWORD': 'red',
+#         'HOST': 'localhost',
+#         'PORT': '5432'
+#     }
+# }
 
 LANGUAGE_CODE = 'vi'
 from django.utils.translation import gettext, gettext_lazy as _

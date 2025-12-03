@@ -1,91 +1,97 @@
-from django.core.management.base import BaseCommand
-from equipments.models import *
-from common.models import *
-from django.utils import timezone
-import random
-from faker import Faker
-import string
-from django.conf import settings
 from datetime import timedelta
+import random
 
-fake = Faker()
-# Tạo ngày hết hạn ngẫu nhiên từ năm 2025 đến 2030
-def random_expiry_date(start_year=2025, end_year=2030):
-    start_date = timezone.now().replace(year=start_year).date()
-    end_date = timezone.now().replace(year=end_year).date()
-    delta_days = (end_date - start_date).days
-    return start_date + timedelta(days=random.randint(0, delta_days))
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from faker import Faker
+
+from common.models import Department, EquipmentModel, Manufacturer, NetworkAddress
+from equipments.models import ConsumableEquipment, Equipment, NetworkDevice
+
+fake = Faker("vi_VN")
+
 
 class Command(BaseCommand):
-    help = "Seed sample data for Equipment, ConsumableEquipment, NetworkDevice"
+    help = "Seed dữ liệu trang bị, vật tư tiêu hao và thiết bị mạng với thông tin thực tế."
+
+    def _spec_text(self, model):
+        specs = model.specifications or {}
+        return "; ".join(f"{k}: {v}" for k, v in specs.items()) if specs else "Đang cập nhật"
 
     def handle(self, *args, **options):
-        models = list(EquipmentModel.objects.all())
+        models = list(EquipmentModel.objects.select_related("type").all())
         departments = list(Department.objects.all())
         manufacturers = list(Manufacturer.objects.all())
-        networks = settings.COMPUTER_NETWORKS
         addresses = list(NetworkAddress.objects.all())
 
-        if not all([models, departments, manufacturers, addresses]):
-            self.stdout.write(self.style.ERROR("Thiếu dữ liệu liên quan! Hãy seed đầy đủ trước."))
+        if not all([models, departments, manufacturers]):
+            self.stdout.write(self.style.ERROR("Thiếu dữ liệu liên quan! Hãy chạy seed_data trước."))
             return
 
-        # Seed Equipment
+        sources = [c[0] for c in settings.SOURCES]
+        countries = [c[0] for c in settings.COUNTRIES]
+        purposes = [c[0] for c in settings.USAGE_PURPOSES]
+        locations = [
+            "Phòng máy chủ - Tầng 6, trụ sở HCM",
+            "Tủ mạng chi nhánh Hà Nội",
+            "Phòng họp lớn - Tầng 4",
+            "Bàn giao dịch khách hàng - Quầy 05",
+            "Khu vực vận hành trung tâm dữ liệu",
+            "Kho dự phòng thiết bị, Tầng hầm B2",
+        ]
+
+        existing_count = Equipment.objects.count()
         equipment_list = []
-        for i in range(1000):
-            serial = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-            equip = Equipment.objects.create(
+        for idx in range(120):
+            model = random.choice(models)
+            serial = f"{model.name.split()[0][:3].upper()}-{timezone.now().year % 100}-{existing_count + idx:04}"
+            equip, _ = Equipment.objects.get_or_create(
                 serial=serial,
-                ms=f"MS{i+1:03}",
-                model=random.choice(models),
-                year=random.randint(2000, 2024),
-                source=random.choice(['NS', 'DA', 'KH']),
-                specification="CPU: Intel i5, RAM: 8GB",
-                storage_location=fake.address(),
-                department=random.choice(departments),
-                manufacturer=random.choice(manufacturers),
-                country=random.choice(['VN', 'US', 'JP', 'CN', 'FR']),
-                group=random.choice(['1', '2']),
-                expiry_date=random_expiry_date(),
-                waranty_info="Bảo hành 3 năm",
-                short_description="Trang bị dùng cho văn phòng",
-                available=True,
+                defaults={
+                    "ms": f"TB-{existing_count + idx + 1:04}",
+                    "model": model,
+                    "year": random.randint(2018, 2024),
+                    "source": random.choice(sources),
+                    "specification": self._spec_text(model),
+                    "storage_location": random.choice(locations),
+                    "department": random.choice(departments),
+                    "manufacturer": random.choice(manufacturers),
+                    "country": random.choice(countries),
+                    "purpose": random.choice(purposes),
+                    "group": "1" if model.type and model.type.id not in ["PRN"] else random.choice(["1", "2"]),
+                    "available": random.choice([True, True, True, False]),
+                    "expiry_date": timezone.now().date() + timedelta(days=random.randint(365, 3 * 365)),
+                    "waranty_info": "Bảo hành 36 tháng, hỗ trợ on-site nội thành",
+                    "short_description": f"{model.name} phục vụ {random.choice(['văn phòng', 'điểm giao dịch', 'phòng họp'])}",
+                },
             )
             equipment_list.append(equip)
 
-        # self.stdout.write(self.style.SUCCESS(f"Đã tạo {len(equipment_list)} Equipment"))
-        # Phân loại thiết bị theo group
-        # Phân loại thiết bị theo group
-        group1_equipment = [e for e in equipment_list if e.group == '1']
-        group2_equipment = [e for e in equipment_list if e.group == '2']
+        parents = [e for e in equipment_list if e.group == "1"]
+        children = [e for e in equipment_list if e.group == "2"]
+        for child in children:
+            if parents:
+                parent = random.choice(parents)
+                child.parent = parent
+                child.save(update_fields=["parent"])
 
-        # Gán thiết bị nhóm 2 làm con của thiết bị nhóm 1
-        for child in group2_equipment:
-            if group1_equipment:
-                parent = random.choice(group1_equipment)
-                child.parent = parent  # Gán thiết bị nhóm 2 làm con của thiết bị nhóm 1
-                child.save()
-
-                # Sau khi gán thiết bị con, có thể xóa thiết bị cha khỏi danh sách nhóm 1
-                # để tránh thiết bị cha bị gán làm con của thiết bị nhóm 2 khác nữa.
-                group1_equipment.remove(parent)
-
-
-        # Seed ConsumableEquipment
-        for equip in equipment_list[:50]:  # chỉ seed 5 cái
-            ConsumableEquipment.objects.create(
+        printer_equipment = [e for e in equipment_list if e.model and e.model.type and e.model.type.id == "PRN"]
+        for equip in printer_equipment[:15]:
+            ConsumableEquipment.objects.update_or_create(
                 equipment=equip,
-                quantity=random.randint(10, 100)
+                defaults={"quantity": random.randint(5, 40)},
             )
-        # self.stdout.write(self.style.SUCCESS("Đã tạo 5 ConsumableEquipment"))
 
-        # Seed NetworkDevice
-        for equip in equipment_list[50:120]:
-            net_dev = NetworkDevice.objects.create(
+        network_types = {"ROUTER", "SWITCH", "AP", "FW"}
+        network_equipments = [e for e in equipment_list if e.model and e.model.type and e.model.type.id in network_types]
+        networks = [choice[0] for choice in settings.COMPUTER_NETWORKS]
+        for equip in network_equipments:
+            net_dev, _ = NetworkDevice.objects.get_or_create(
                 equipment=equip,
-                network=random.choice(networks)
+                defaults={"network": random.choice(networks)},
             )
-            net_dev.address.set(random.sample(addresses, k=1))
-        # self.stdout.write(self.style.SUCCESS("Đã tạo 5 NetworkDevice"))
+            if addresses:
+                net_dev.address.set(random.sample(addresses, k=1))
 
-        self.stdout.write(self.style.SUCCESS("✅ Hoàn tất tạo dữ liệu mẫu Equipments"))
+        self.stdout.write(self.style.SUCCESS("Hoàn tất tạo dữ liệu mẫu cho trang bị, vật tư và thiết bị mạng."))
